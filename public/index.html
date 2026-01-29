@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Socket.IO Chat</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Helvetica, Arial, sans-serif;
+      background: #e5ddd5;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    .chat-header {
+      height: 60px;
+      background: #075e54;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      padding: 0 15px;
+      font-size: 18px;
+      font-weight: 600;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 10;
+    }
+
+    /* Chat area */
+    .chat-container {
+      flex: 1;
+      padding: 80px 10px 70px;
+      overflow-y: auto;
+    }
+
+    #messages {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    #messages li {
+      max-width: 75%;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      line-height: 1.4;
+      word-wrap: break-word;
+    }
+
+    /* Sent message */
+    #messages li.sent {
+      align-self: flex-end;
+      background: #dcf8c6;
+      border-bottom-right-radius: 2px;
+    }
+
+    /* Received message */
+    #messages li.received {
+      align-self: flex-start;
+      background: #ffffff;
+      border-bottom-left-radius: 2px;
+    }
+
+    /* Message form */
+    #form {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: #f0f0f0;
+      display: flex;
+      align-items: center;
+      padding: 8px;
+      gap: 8px;
+      border-top: 1px solid #ddd;
+    }
+
+    #input {
+      flex: 1;
+      border: none;
+      padding: 10px 14px;
+      border-radius: 20px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    #form button {
+      background: #075e54;
+      color: #fff;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 50%;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    #form button:hover {
+      background: #064c44;
+    }
+
+    /* Mobile responsive */
+    @media (max-width: 600px) {
+      #messages li {
+        max-width: 85%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Header -->
+  <div class="chat-header">
+    <p id="someone">💬 Socket.IO Chat</p>
+  </div>
+
+  <!-- Chat Messages -->
+  <div class="chat-container">
+    <ul id="messages"></ul>
+  </div>
+
+  <!-- Message Input -->
+  <form id="form" action="">
+    <input id="input" autocomplete="off" placeholder="Type a message..." />
+    <button>➤</button>
+  </form>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    var socket = io();
+
+    const messages = document.getElementById('messages');
+    let form = document.getElementById("form");
+    let input = document.getElementById("input");
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (input.value) {
+        const message = { id: "", value: input.value};
+        socket.emit('chat message', message);
+        input.value = "";
+      }
+    });
+
+    socket.on('chat message', function (msg) {
+      let item = document.createElement('li');
+      item.textContent = `${msg.value} User:${msg.user++}`;
+
+      if (socket.id !== msg.id) {
+        item.classList.add('received');
+        item.textContent = `${msg.value} From User:${msg.id}`;
+      } else {
+        item.classList.add('sent');
+        item.textContent = `${msg.value}`;
+      }
+
+      messages.appendChild(item);
+      window.scrollTo(0, document.body.scrollHeight);
+    });
+
+    // socket.on('broadcast message', function (message) {
+    //   broadcastMessage.innerText = message;
+    // });
+  </script>
+
+</body>
+</html>
