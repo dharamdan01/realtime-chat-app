@@ -17,7 +17,6 @@
       flex-direction: column;
     }
 
-    /* Header */
     .chat-header {
       height: 60px;
       background: #075e54;
@@ -34,7 +33,6 @@
       z-index: 10;
     }
 
-    /* Chat area */
     .chat-container {
       flex: 1;
       padding: 80px 10px 70px;
@@ -59,21 +57,21 @@
       word-wrap: break-word;
     }
 
-    /* Sent message */
+  
     #messages li.sent {
       align-self: flex-end;
       background: #dcf8c6;
       border-bottom-right-radius: 2px;
     }
 
-    /* Received message */
+  
     #messages li.received {
       align-self: flex-start;
       background: #ffffff;
       border-bottom-left-radius: 2px;
     }
 
-    /* Message form */
+
     #form {
       position: fixed;
       bottom: 0;
@@ -122,17 +120,16 @@
 
 <body>
 
-  <!-- Header -->
   <div class="chat-header">
     <p id="someone">💬 Socket.IO Chat</p>
   </div>
 
-  <!-- Chat Messages -->
+
   <div class="chat-container">
     <ul id="messages"></ul>
   </div>
 
-  <!-- Message Input -->
+
   <form id="form" action="">
     <input id="input" autocomplete="off" placeholder="Type a message..." />
     <button>➤</button>
