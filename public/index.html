@@ -23,6 +23,7 @@
       color: #fff;
       display: flex;
       align-items: center;
+      justify-content: space-between;
       padding: 0 15px;
       font-size: 18px;
       font-weight: 600;
@@ -31,6 +32,57 @@
       left: 0;
       right: 0;
       z-index: 10;
+    }
+
+    .online-button {
+      background: #10b981;
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.3s ease;
+    }
+
+    .online-button::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: #fff;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    .online-button:hover {
+      background: #059669;
+      transform: scale(1.05);
+    }
+
+    .online-button.offline {
+      background: #ef4444;
+    }
+
+    .online-button.offline:hover {
+      background: #dc2626;
+    }
+
+    .online-button.offline::before {
+      animation: none;
+      opacity: 0.5;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.5;
+      }
     }
 
     .chat-container {
@@ -48,6 +100,28 @@
       gap: 8px;
     }
 
+    @keyframes slideInLeft {
+      from {
+        opacity: 0;
+        transform: translateX(-30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes slideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
     #messages li {
       max-width: 75%;
       padding: 8px 12px;
@@ -55,6 +129,7 @@
       font-size: 14px;
       line-height: 1.4;
       word-wrap: break-word;
+      animation: slideInLeft 0.4s ease-out;
     }
 
   
@@ -62,6 +137,7 @@
       align-self: flex-end;
       background: #dcf8c6;
       border-bottom-right-radius: 2px;
+      animation: slideInRight 0.4s ease-out;
     }
 
   
@@ -69,6 +145,7 @@
       align-self: flex-start;
       background: #ffffff;
       border-bottom-left-radius: 2px;
+      animation: slideInLeft 0.4s ease-out;
     }
 
 
@@ -103,6 +180,7 @@
       border-radius: 50%;
       font-size: 14px;
       cursor: pointer;
+      transition: background 0.2s ease;
     }
 
     #form button:hover {
@@ -121,7 +199,8 @@
 <body>
 
   <div class="chat-header">
-    <p id="someone">💬 Socket.IO Chat</p>
+    <p id="someone">💬 SyncChat</p>
+    <button class="online-button">● Online</button>
   </div>
 
 
@@ -142,6 +221,7 @@
     const messages = document.getElementById('messages');
     let form = document.getElementById("form");
     let input = document.getElementById("input");
+    const onlineButton = document.querySelector('.online-button');
 
     form.addEventListener('submit', function (e) {
       e.preventDefault();
@@ -154,18 +234,34 @@
 
     socket.on('chat message', function (msg) {
       let item = document.createElement('li');
-      item.textContent = `${msg.value} User:${msg.user++}`;
+      item.textContent = `${msg.value}`;
 
       if (socket.id !== msg.id) {
         item.classList.add('received');
-        item.textContent = `${msg.value} From User:${msg.id}`;
       } else {
         item.classList.add('sent');
-        item.textContent = `${msg.value}`;
       }
 
       messages.appendChild(item);
+      
       window.scrollTo(0, document.body.scrollHeight);
+    });
+
+
+    socket.on('connect', function () {
+
+      onlineButton.textContent = '● Online';
+
+      onlineButton.classList.remove('offline');
+
+      console.log('Connected to server');
+    });
+
+    socket.on('disconnect', function () {
+
+      onlineButton.textContent = '● Offline';
+
+      onlineButton.classList.add('offline');
     });
 
     // socket.on('broadcast message', function (message) {
