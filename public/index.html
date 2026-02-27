@@ -19,6 +19,7 @@
 
     .chat-header {
       height: 60px;
+      
       background: #075e54;
       color: #fff;
       display: flex;
@@ -28,6 +29,7 @@
       font-size: 18px;
       font-weight: 600;
       position: fixed;
+
       top: 0;
       left: 0;
       right: 0;
@@ -210,8 +212,11 @@
 
 
   <form id="form" action="">
+
     <input id="input" autocomplete="off" placeholder="Type a message..." />
+
     <button>➤</button>
+
   </form>
 
   <script src="/socket.io/socket.io.js"></script>
@@ -219,8 +224,11 @@
     var socket = io();
 
     const messages = document.getElementById('messages');
+
     let form = document.getElementById("form");
+
     let input = document.getElementById("input");
+
     const onlineButton = document.querySelector('.online-button');
 
     form.addEventListener('submit', function (e) {

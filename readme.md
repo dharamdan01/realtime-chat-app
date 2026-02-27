@@ -1,6 +1,6 @@
 <div align="center">
 
-# 💬 Real-Time Chat Application
+# 💬 SyncChat Application
 
 ### **WhatsApp-Style Messaging with Socket.IO**
 
@@ -19,7 +19,7 @@
 
 ## 🎯 Overview
 
-A **production-ready real-time chat application** featuring a WhatsApp-inspired interface, built with Socket.IO for bi-directional WebSocket communication. Messages are instantly broadcasted to all connected users with visual distinction between sent and received messages.
+A **production-ready real-time chat application** featuring a WhatsApp-inspired interface, built with Socket.IO for bi-directional WebSocket communication. Messages are instantly broadcasted to all connected users with smooth animations and a live Online/Offline connection status indicator.
 
 ---
 
@@ -32,15 +32,24 @@ A **production-ready real-time chat application** featuring a WhatsApp-inspired 
 - Automatic message synchronization
 
 ### 🎨 **WhatsApp-Style UI**
-- **Sent Messages** - Green bubbles, right-aligned
-- **Received Messages** - White bubbles, left-aligned with sender ID
-- Responsive design for all devices
-- Modern, clean interface
+- **Sent Messages** — Green bubbles, right-aligned with slide-in animation
+- **Received Messages** — White bubbles, left-aligned with slide-in animation
+- Responsive design for all screen sizes
+- Modern, clean interface with WhatsApp color palette
+
+### 🟢 **Live Connection Status**
+- Animated **Online** button with pulsing green indicator when connected
+- Switches to **Offline** (red) automatically on disconnection
+- Smooth hover and scale transitions on the status button
+
+### 🎞️ **Message Animations**
+- Sent messages slide in from the **right**
+- Received messages slide in from the **left**
+- Smooth CSS `@keyframes` animations for every new message
 
 ### 📡 **Broadcasting System**
-- Messages delivered to all connected clients
-- Sender identification with socket IDs
-- Real-time user presence
+- Messages delivered to all connected clients simultaneously
+- Socket ID-based sender identification (sent vs received)
 - Scalable architecture
 
 ---
@@ -62,19 +71,15 @@ Protocol:  WebSocket (with HTTP fallback)
 ┌─────────────────────────────────────────────────────────────┐
 │                     User Interface                           │
 │  ┌─────────────────────────────────────────────────────┐   │
+│  │  Chat Header: 💬 SyncChat          [🟢 Online]     │   │
+│  ├─────────────────────────────────────────────────────┤   │
 │  │  Chat Window (index.html)                           │   │
 │  │  ┌─────────────────────────────────────────────┐   │   │
-│  │  │  Received Message (White/Left)              │   │   │
-│  │  │  ┌──────────────────────┐                   │   │   │
-│  │  │  │ Hello! How are you?  │ [Socket ID: abc] │   │   │
-│  │  │  └──────────────────────┘                   │   │   │
+│  │  │  ← Hello! How are you?   [received/white]   │   │   │
 │  │  │                                              │   │   │
-│  │  │                   Sent Message (Green/Right)│   │   │
-│  │  │                   ┌──────────────────────┐  │   │   │
-│  │  │                   │ I'm good, thanks!    │  │   │   │
-│  │  │                   └──────────────────────┘  │   │   │
+│  │  │         I'm good, thanks! →  [sent/green]   │   │   │
 │  │  └─────────────────────────────────────────────┘   │   │
-│  │  Input: [Type a message...] [Send]                 │   │
+│  │  Input: [Type a message...]              [➤]       │   │
 │  └──────────────────┬──────────────────────────────────┘   │
 └─────────────────────┼──────────────────────────────────────┘
                       │
@@ -84,14 +89,11 @@ Protocol:  WebSocket (with HTTP fallback)
 │               Express + Socket.IO Server                     │
 │  ┌──────────────────────────────────────────────────────┐  │
 │  │  Event: 'chat message'                               │  │
-│  │  ┌────────────────────────────────────────────────┐ │  │
-│  │  │ 1. Receive message from client                 │ │  │
-│  │  │ 2. Attach sender's socket.id                   │ │  │
-│  │  │ 3. Broadcast to ALL clients (io.emit)          │ │  │
-│  │  └────────────────────────────────────────────────┘ │  │
+│  │  1. Receive { id, value } from client               │  │
+│  │  2. Attach sender's socket.id                        │  │
+│  │  3. Broadcast to ALL clients (io.emit)               │  │
 │  └──────────────────────────────────────────────────────┘  │
-└─────────────────────┼──────────────────────────────────────┘
-                      │
+└─────────────────────┼───────────────────────────────────────┘
                       │ Broadcast
                       ▼
 ┌─────────────────────────────────────────────────────────────┐
@@ -158,18 +160,21 @@ Open multiple browser tabs or windows to simulate different users chatting!
 
 ```javascript
 // CLIENT SIDE (index.html)
-// 1. User types and sends message
-socket.emit('chat message', messageText);
+// 1. User types and submits a message
+socket.emit('chat message', { id: "", value: input.value });
 
-// 2. Receive broadcasted messages
-socket.on('message', (msg) => {
-    if (socket.id === msg.id) {
-        // Display as SENT (Green/Right)
-        displaySentMessage(msg.message);
+// 2. Receive broadcasted messages from server
+socket.on('chat message', function (msg) {
+    let item = document.createElement('li');
+    item.textContent = msg.value;
+
+    if (socket.id !== msg.id) {
+        item.classList.add('received');   // White bubble, slides in from left
     } else {
-        // Display as RECEIVED (White/Left)
-        displayReceivedMessage(msg.message, msg.id);
+        item.classList.add('sent');       // Green bubble, slides in from right
     }
+
+    messages.appendChild(item);
 });
 ```
 
@@ -177,44 +182,28 @@ socket.on('message', (msg) => {
 // SERVER SIDE (index.js)
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
-    
+
     socket.on('chat message', (msg) => {
-        // Broadcast to ALL clients (including sender)
-        io.emit('message', {
-            message: msg,
-            id: socket.id  // Attach sender's ID
-        });
+        msg.id = socket.id;           // Stamp sender's socket ID
+        io.emit('chat message', msg); // Broadcast to ALL clients
     });
 });
 ```
 
-### **Message Identification Logic**
+### **Connection Status Logic**
 
-```
-┌─────────────────────────────────────────────────┐
-│  Incoming Message                               │
-│  { message: "Hello!", id: "abc123" }           │
-└───────────────────┬─────────────────────────────┘
-                    │
-                    ▼
-        ┌───────────────────────┐
-        │  Compare Socket IDs   │
-        │  socket.id === msg.id │
-        └───────────┬───────────┘
-                    │
-        ┌───────────┴───────────┐
-        ▼                       ▼
-    ┌─────────┐           ┌─────────────┐
-    │  Match  │           │  No Match   │
-    └────┬────┘           └──────┬──────┘
-         │                       │
-         ▼                       ▼
-    ┌─────────────┐       ┌──────────────────┐
-    │  SENT       │       │  RECEIVED        │
-    │  Green      │       │  White           │
-    │  Right ─────┤       │  ───── Left      │
-    └─────────────┘       │  + Sender ID     │
-                          └──────────────────┘
+```javascript
+// Fires on successful WebSocket connection
+socket.on('connect', function () {
+    onlineButton.textContent = '● Online';
+    onlineButton.classList.remove('offline');  // Green button
+});
+
+// Fires when connection is lost
+socket.on('disconnect', function () {
+    onlineButton.textContent = '● Offline';
+    onlineButton.classList.add('offline');     // Red button
+});
 ```
 
 ---
@@ -223,26 +212,34 @@ io.on('connection', (socket) => {
 
 ### **Sent Message (You)**
 ```css
-.sent {
-    background-color: #dcf8c6;  /* WhatsApp green */
-    margin-left: auto;
-    margin-right: 10px;
-    text-align: right;
-    border-radius: 10px 10px 0 10px;
+#messages li.sent {
+    align-self: flex-end;
+    background: #dcf8c6;             /* WhatsApp green */
+    border-bottom-right-radius: 2px;
+    animation: slideInRight 0.4s ease-out;
 }
 ```
 
 ### **Received Message (Others)**
 ```css
-.received {
-    background-color: #ffffff;  /* White */
-    margin-left: 10px;
-    margin-right: auto;
-    border-radius: 10px 10px 10px 0;
+#messages li.received {
+    align-self: flex-start;
+    background: #ffffff;             /* White */
+    border-bottom-left-radius: 2px;
+    animation: slideInLeft 0.4s ease-out;
 }
-.sender-id {
-    font-size: 0.75em;
-    color: #888;
+```
+
+### **Online / Offline Status Button**
+```css
+.online-button {
+    background: #10b981;             /* Green when online */
+    border-radius: 20px;
+    animation: pulse 2s infinite;   /* Pulsing dot */
+}
+
+.online-button.offline {
+    background: #ef4444;             /* Red when offline */
 }
 ```
 
@@ -251,10 +248,9 @@ io.on('connection', (socket) => {
 ## 🔧 Customization
 
 ### **Change Port**
-
-**index.js:**
 ```javascript
-const PORT = process.env.PORT || 3000;  // Change 3000 to desired port
+// index.js
+const PORT = process.env.PORT || 3000;
 ```
 
 ### **Add Username Support**
@@ -262,29 +258,31 @@ const PORT = process.env.PORT || 3000;  // Change 3000 to desired port
 **Client-side:**
 ```javascript
 const username = prompt("Enter your name:");
-socket.emit('chat message', { text: messageText, user: username });
+socket.emit('chat message', { id: "", value: input.value, user: username });
 ```
 
 **Server-side:**
 ```javascript
-socket.on('chat message', (data) => {
-    io.emit('message', {
-        message: data.text,
-        user: data.user,
-        id: socket.id
-    });
+socket.on('chat message', (msg) => {
+    msg.id = socket.id;
+    io.emit('chat message', msg);
 });
 ```
 
-### **Add Timestamps**
-
+**Display in message:**
 ```javascript
-const timestamp = new Date().toLocaleTimeString();
-io.emit('message', {
-    message: msg,
-    id: socket.id,
-    time: timestamp
-});
+item.textContent = `${msg.user}: ${msg.value}`;
+```
+
+### **Add Timestamps**
+```javascript
+// Server-side
+msg.id = socket.id;
+msg.time = new Date().toLocaleTimeString();
+io.emit('chat message', msg);
+
+// Client-side
+item.textContent = `${msg.value}  ${msg.time}`;
 ```
 
 ---
@@ -293,25 +291,26 @@ io.emit('message', {
 
 <div align="center">
   <img src="./screenshots/chat-interface.png" alt="WhatsApp-Style Chat Interface" width="800"/>
-  <p><i>Clean, responsive chat interface with sent/received message distinction</i></p>
+  <p><i>Clean, responsive chat interface with animated sent/received message bubbles and live connection status</i></p>
 </div>
 
 ---
 
 ## 🗺️ Roadmap
 
-- [ ] **User Authentication** - Login system with usernames
-- [ ] **Private Messaging** - One-on-one chat rooms
-- [ ] **Group Chats** - Multiple chat channels
-- [ ] **Typing Indicators** - "User is typing..." status
-- [ ] **Message History** - Persistent storage with MongoDB
-- [ ] **File Sharing** - Image and document uploads
-- [ ] **Emoji Picker** - Native emoji support
-- [ ] **Read Receipts** - Message seen/delivered status
-- [ ] **Online Status** - Active/inactive user indicators
-- [ ] **Push Notifications** - Desktop alerts
-- [ ] **Voice Messages** - Audio recording
-- [ ] **Dark Mode** - Theme toggle
+- [x] **WhatsApp-Style UI** — Green/white message bubbles
+- [x] **Message Animations** — Slide-in from left/right
+- [x] **Online/Offline Status** — Live connection indicator with pulse animation
+- [ ] **User Authentication** — Login system with usernames
+- [ ] **Typing Indicators** — "User is typing..." status
+- [ ] **Private Messaging** — One-on-one chat rooms
+- [ ] **Group Chats** — Multiple chat channels
+- [ ] **Message History** — Persistent storage with MongoDB
+- [ ] **File Sharing** — Image and document uploads
+- [ ] **Emoji Picker** — Native emoji support
+- [ ] **Read Receipts** — Message seen/delivered status
+- [ ] **Push Notifications** — Desktop alerts
+- [ ] **Dark Mode** — Theme toggle
 
 ---
 
@@ -321,7 +320,6 @@ io.emit('message', {
 
 **Solution:** Check browser console for errors
 ```javascript
-// Add to client-side
 socket.on('connect_error', (err) => {
     console.error('Connection failed:', err);
 });
@@ -329,13 +327,9 @@ socket.on('connect_error', (err) => {
 
 ---
 
-**Problem:** Can't distinguish sent/received messages
+**Problem:** Status button stuck on Offline
 
-**Solution:** Verify socket ID comparison
-```javascript
-// Ensure you're using ===, not ==
-if (socket.id === msg.id) { /* ... */ }
-```
+**Solution:** Ensure the server is running and Socket.IO is correctly served. The `connect` event fires only after a successful handshake.
 
 ---
 
@@ -344,10 +338,10 @@ if (socket.id === msg.id) { /* ... */ }
 **Solution:**
 ```bash
 # Find and kill process
-lsof -i :3000  # Mac/Linux
-netstat -ano | findstr :3000  # Windows
+lsof -i :3000        # Mac/Linux
+netstat -ano | findstr :3000   # Windows
 
-# Or use different port
+# Or use a different port
 PORT=3001 npm start
 ```
 
@@ -370,7 +364,7 @@ Contributions are welcome!
 - [Socket.IO Documentation](https://socket.io/docs/)
 - [WebSocket Protocol](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API)
 - [Express.js Guide](https://expressjs.com/en/guide/routing.html)
-- [Real-Time Communication](https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API)
+- [CSS Animations](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_animations/Using_CSS_animations)
 
 ---
 
